@@ -1,0 +1,11 @@
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\ArasBatchUploadCheck.exe.config
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.csprojResolveAssemblyReference.cache
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.FrmMain.resources
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.Properties.Resources.resources
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.csproj.GenerateResource.Cache
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\ArasBatchUploadCheck.exe
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\ArasBatchUploadCheck.pdb
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\IOM.dll
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\IOM.pdb
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.exe
+F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.pdb
