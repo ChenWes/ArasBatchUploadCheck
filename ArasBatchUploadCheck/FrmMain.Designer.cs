@@ -42,11 +42,11 @@
             this.txt_DB = new System.Windows.Forms.TextBox();
             this.txt_serverurl = new System.Windows.Forms.TextBox();
             this.tre_Item = new System.Windows.Forms.TreeView();
+            this.imageList_Item = new System.Windows.Forms.ImageList(this.components);
             this.txt_SearchAML = new System.Windows.Forms.TextBox();
             this.txt_SearchItem = new System.Windows.Forms.TextBox();
             this.btn_CheckItem = new System.Windows.Forms.Button();
             this.pro_CheckItem = new System.Windows.Forms.ProgressBar();
-            this.imageList_Item = new System.Windows.Forms.ImageList(this.components);
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -112,6 +112,7 @@
             this.btn_disconnection.TabIndex = 1;
             this.btn_disconnection.Text = "Disconnection";
             this.btn_disconnection.UseVisualStyleBackColor = true;
+            this.btn_disconnection.Click += new System.EventHandler(this.btn_disconnection_Click);
             // 
             // btn_ConnectionAras
             // 
@@ -166,6 +167,15 @@
             this.tre_Item.Size = new System.Drawing.Size(741, 488);
             this.tre_Item.TabIndex = 7;
             // 
+            // imageList_Item
+            // 
+            this.imageList_Item.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList_Item.ImageStream")));
+            this.imageList_Item.TransparentColor = System.Drawing.Color.Transparent;
+            this.imageList_Item.Images.SetKeyName(0, "complete.png");
+            this.imageList_Item.Images.SetKeyName(1, "start.png");
+            this.imageList_Item.Images.SetKeyName(2, "wait.png");
+            this.imageList_Item.Images.SetKeyName(3, "error.png");
+            // 
             // txt_SearchAML
             // 
             this.txt_SearchAML.Location = new System.Drawing.Point(12, 92);
@@ -201,15 +211,6 @@
             this.pro_CheckItem.Name = "pro_CheckItem";
             this.pro_CheckItem.Size = new System.Drawing.Size(823, 16);
             this.pro_CheckItem.TabIndex = 10;
-            // 
-            // imageList_Item
-            // 
-            this.imageList_Item.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList_Item.ImageStream")));
-            this.imageList_Item.TransparentColor = System.Drawing.Color.Transparent;
-            this.imageList_Item.Images.SetKeyName(0, "complete.png");
-            this.imageList_Item.Images.SetKeyName(1, "start.png");
-            this.imageList_Item.Images.SetKeyName(2, "wait.png");
-            this.imageList_Item.Images.SetKeyName(3, "error.png");
             // 
             // FrmMain
             // 

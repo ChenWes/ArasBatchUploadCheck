@@ -850,7 +850,7 @@ namespace ArasBatchUploadCheck
             mc_conn = null;
             mc_innovator = null;
             SettingConnectionButton(false);            
-        }
+        }        
 
         //--------------------------------------------------------------------------------------------
 
@@ -932,6 +932,8 @@ namespace ArasBatchUploadCheck
                 ShowError(ex.Message);
             }
         }
+
+        
 
         //--------------------------------------------------------------------------------------------        
     }
