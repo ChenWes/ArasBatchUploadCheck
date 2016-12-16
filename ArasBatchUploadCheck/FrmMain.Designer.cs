@@ -47,6 +47,7 @@
             this.txt_SearchItem = new System.Windows.Forms.TextBox();
             this.btn_CheckItem = new System.Windows.Forms.Button();
             this.pro_CheckItem = new System.Windows.Forms.ProgressBar();
+            this.btn_FixGarmentStyle = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -197,7 +198,7 @@
             // 
             // btn_CheckItem
             // 
-            this.btn_CheckItem.Location = new System.Drawing.Point(759, 651);
+            this.btn_CheckItem.Location = new System.Drawing.Point(759, 618);
             this.btn_CheckItem.Name = "btn_CheckItem";
             this.btn_CheckItem.Size = new System.Drawing.Size(75, 23);
             this.btn_CheckItem.TabIndex = 9;
@@ -212,11 +213,22 @@
             this.pro_CheckItem.Size = new System.Drawing.Size(823, 16);
             this.pro_CheckItem.TabIndex = 10;
             // 
+            // btn_FixGarmentStyle
+            // 
+            this.btn_FixGarmentStyle.Location = new System.Drawing.Point(759, 651);
+            this.btn_FixGarmentStyle.Name = "btn_FixGarmentStyle";
+            this.btn_FixGarmentStyle.Size = new System.Drawing.Size(75, 23);
+            this.btn_FixGarmentStyle.TabIndex = 11;
+            this.btn_FixGarmentStyle.Text = "Fix";
+            this.btn_FixGarmentStyle.UseVisualStyleBackColor = true;
+            this.btn_FixGarmentStyle.Click += new System.EventHandler(this.btn_FixGarmentStyle_Click);
+            // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(846, 686);
+            this.Controls.Add(this.btn_FixGarmentStyle);
             this.Controls.Add(this.pro_CheckItem);
             this.Controls.Add(this.btn_CheckItem);
             this.Controls.Add(this.txt_SearchItem);
@@ -251,6 +263,7 @@
         private System.Windows.Forms.Button btn_CheckItem;
         private System.Windows.Forms.ProgressBar pro_CheckItem;
         private System.Windows.Forms.ImageList imageList_Item;
+        private System.Windows.Forms.Button btn_FixGarmentStyle;
     }
 }
 
