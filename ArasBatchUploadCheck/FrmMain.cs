@@ -406,13 +406,73 @@ namespace ArasBatchUploadCheck
         
         private bool CheckValue_MC(AttList ListItem,string fieldValue)
         {
-            return ListItem.Value.FirstOrDefault(t => t.label.ToLower() == fieldValue.ToLower()) == null ? false : true;
+            if(string.IsNullOrEmpty(fieldValue))
+            {
+                return true;
+            }
+            bool bln_flag= ListItem.Value.FirstOrDefault(t => t.label.ToLower() == fieldValue.ToLower()) == null ? false : true;
+            if(!bln_flag)
+            {
+                bln_flag = ListItem.Value.FirstOrDefault(t => t.value.ToLower() == fieldValue.ToLower()) == null ? false : true;
+            }
+
+            return bln_flag;
         }
 
         private bool CheckFilterValue_MC(AttList ListItem, string filter, string fieldValue)
         {
-            return ListItem.FilterValue.FirstOrDefault(t => t.filter.ToLower() == filter && t.label.ToLower() == fieldValue.ToLower()) == null ? false : true;
+            if(string.IsNullOrEmpty(fieldValue))
+            {
+                return true;
+            }
+            bool bln_flag = ListItem.FilterValue.FirstOrDefault(t => t.filter.ToLower() == filter.ToLower() && t.label.ToLower() == fieldValue.ToLower()) == null ? false : true;
+            if(!bln_flag)
+            {
+                bln_flag = ListItem.FilterValue.FirstOrDefault(t => t.filter.ToLower() == filter.ToLower() && t.value.ToLower() == fieldValue.ToLower()) == null ? false : true;
+            }
+            return bln_flag;
         }
+
+        //------------------------------
+        private string GetValue_ByLabel(AttList ListItem, string fieldlabel)
+        {
+            string l_returnValue = string.Empty;
+            var getValue = ListItem.Value.FirstOrDefault(t => t.value.ToLower() == fieldlabel.ToLower());
+            if (getValue == null)
+            {
+                var getValueByValue = ListItem.Value.FirstOrDefault(t => t.label.ToLower() == fieldlabel.ToLower());
+                if (getValueByValue != null)
+                {
+                    l_returnValue = l_returnValue;
+                }
+            }
+            else
+            {
+                l_returnValue = getValue.value;
+            }
+            return l_returnValue;
+        }
+
+        private string GetFilterValue_ByLabel(AttList ListItem, string filter, string fieldlabel)
+        {
+            string l_returnValue = string.Empty;
+
+            var getValue = ListItem.FilterValue.FirstOrDefault(t => t.filter.ToLower() == filter.ToLower() && t.value.ToLower() == fieldlabel.ToLower());
+            if (getValue == null)
+            {
+                var getValueByLabel = ListItem.FilterValue.FirstOrDefault(t => t.filter.ToLower() == filter.ToLower() && t.label.ToLower() == fieldlabel.ToLower());
+                if (getValueByLabel != null)
+                {
+                    l_returnValue = getValueByLabel.value;
+                }
+            }
+            else
+            {
+                l_returnValue = getValue.value;
+            }
+            return l_returnValue;
+        }
+        //------------------------------
 
         private CheckItemStatus CheckGarmentItem(Item garmentItem)
         {
@@ -426,8 +486,11 @@ namespace ArasBatchUploadCheck
                 switch (Item)
                 {
                     case AttributeType.ProductType:
-
                         StatusItem.bln_ProductType = CheckValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        if (!StatusItem.bln_ProductType)
+                        {
+                            StatusItem.bln_Check = false;
+                        }
                         break;
                     case AttributeType.ProductCatetory:
                         if (!StatusItem.bln_ProductType)
@@ -438,6 +501,11 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_ProductCategory = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class0", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_ProductCategory)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.ProductType)), garmentItem.getProperty("cn_class0", ""));
+                                StatusItem.bln_ProductCategory = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.SubCatetory:
@@ -449,10 +517,19 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_SubCategory = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class1", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_SubCategory)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.ProductCatetory)), garmentItem.getProperty("cn_class1", ""));
+                                StatusItem.bln_SubCategory = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.GarmentType:
                         StatusItem.bln_GarmentType = CheckValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        if (!StatusItem.bln_GarmentType)
+                        {
+                            StatusItem.bln_Check = false;
+                        }
                         break;
                     case AttributeType.Collection:
                         if(!StatusItem.bln_SubCategory)
@@ -463,6 +540,11 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Collection = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Collection)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Collection = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Series:
@@ -474,10 +556,19 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Series = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Series)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Series = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Gender:
-                        StatusItem.bln_Gender = CheckValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class0", ""));//***
+                        StatusItem.bln_Gender = CheckValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        if (!StatusItem.bln_Gender)
+                        {
+                            StatusItem.bln_Check = false;
+                        }
                         break;
                     case AttributeType.Cuff:
                         if (!StatusItem.bln_SubCategory)
@@ -488,6 +579,11 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Cuff = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Cuff)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Cuff = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Making:
@@ -499,6 +595,11 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Making = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Making)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Making = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Fit:
@@ -510,6 +611,11 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Fit = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Fit)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Fit = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Pocket:
@@ -521,6 +627,11 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Pocket = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Pocket)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Pocket = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Collar:
@@ -532,6 +643,11 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Collar = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Collar)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Collar = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Placket:
@@ -543,6 +659,11 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Placket = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Placket)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Placket = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Sleeve:
@@ -554,6 +675,11 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Sleeve = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Sleeve)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Sleeve = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Styling:
@@ -565,10 +691,19 @@ namespace ArasBatchUploadCheck
                         else
                         {
                             StatusItem.bln_Styling = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty("cn_class2", ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(!StatusItem.bln_Styling)
+                            {
+                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty("cn_class2", ""));
+                                StatusItem.bln_Styling = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            }
                         }
                         break;
                     case AttributeType.Washing:
                         StatusItem.bln_Washing = CheckValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        if (!StatusItem.bln_Washing)
+                        {
+                            StatusItem.bln_Check = false;
+                        }
                         break;
                     default:
                         break;
@@ -589,7 +724,7 @@ namespace ArasBatchUploadCheck
             foreach (AttributeType Item in (AttributeType[])System.Enum.GetValues(typeof(AttributeType)))
             {
                 TreeNode l_node = new TreeNode();
-                l_node.Text = GetAttributeColumnName(Item);
+                l_node.Text = Item.ToString() + "---------" + GetAttributeColumnName(Item);
 
                 switch (Item)
                 {
@@ -750,7 +885,7 @@ namespace ArasBatchUploadCheck
                 {                    
                     int l_columnIdx = 0;
 
-                    SettingProcess(l_getDataRow.Length - 1, rowIDX);
+                    SettingProcess(l_getDataRow.Length, rowIDX + 1);
 
                     #region get parameter
 
