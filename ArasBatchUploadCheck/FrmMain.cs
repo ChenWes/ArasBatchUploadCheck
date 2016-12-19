@@ -17,7 +17,7 @@ namespace ArasBatchUploadCheck
         private HttpServerConnection mc_conn = null;
         private Innovator mc_innovator = null;
 
-        private List<AttList> mc_List=new List<AttList>();
+        private List<AttList> mc_List = new List<AttList>();
 
         enum AttributeType
         {
@@ -169,7 +169,7 @@ namespace ArasBatchUploadCheck
         {
             InitializeComponent();
 
-            SettingConnectionButton(false);                        
+            SettingConnectionButton(false);
 
             pro_CheckItem.Minimum = 0;
             pro_CheckItem.Maximum = 100;
@@ -211,7 +211,7 @@ namespace ArasBatchUploadCheck
             txt_username.Enabled = !bln_ConnectionFlag;
             txt_password.Enabled = !bln_ConnectionFlag;
 
-           
+
             //----------------------------------------------
 
             btn_CheckItem.Enabled = bln_ConnectionFlag;
@@ -219,11 +219,11 @@ namespace ArasBatchUploadCheck
             txt_SearchItem.Enabled = bln_ConnectionFlag;
             tre_Item.Enabled = bln_ConnectionFlag;
 
-            if(bln_ConnectionFlag)
+            if (bln_ConnectionFlag)
             {
                 ClearCheckInfomation();
             }
-        }        
+        }
 
         private void ClearCheckInfomation()
         {
@@ -233,7 +233,7 @@ namespace ArasBatchUploadCheck
 
         private Item GetItemByAML(string pi_AML)
         {
-            Item l_returnItem=null;
+            Item l_returnItem = null;
             if (string.IsNullOrEmpty(pi_AML))
             {
                 return l_returnItem;
@@ -246,19 +246,19 @@ namespace ArasBatchUploadCheck
             l_returnItem = mc_innovator.applyAML(pi_AML);
 
             return l_returnItem;
-        }        
+        }
 
         private AttList GetAttListByValue(string pi_ListName)
         {
             AttList ListItem = new AttList();
-            
-            StringBuilder temp_AML=new StringBuilder();
+
+            StringBuilder temp_AML = new StringBuilder();
             temp_AML.Append("<Item type=\"List\" select=\"id,name\" action=\"get\">");
-	        temp_AML.Append("    <name>{0}</name>");
-	        temp_AML.Append("    <Relationships>");
-		    temp_AML.Append("        <Item type=\"Value\" select=\"value,label\" action=\"get\">");
-		    temp_AML.Append("        </Item>");
-	        temp_AML.Append("    </Relationships>");
+            temp_AML.Append("    <name>{0}</name>");
+            temp_AML.Append("    <Relationships>");
+            temp_AML.Append("        <Item type=\"Value\" select=\"value,label\" action=\"get\">");
+            temp_AML.Append("        </Item>");
+            temp_AML.Append("    </Relationships>");
             temp_AML.Append("</Item>");
 
             string l_getAML = string.Format(temp_AML.ToString(), pi_ListName);
@@ -402,16 +402,16 @@ namespace ArasBatchUploadCheck
                     mc_List.Add(l_getData);
                 }
             }
-        }        
-        
-        private bool CheckValue_MC(AttList ListItem,string fieldValue)
+        }
+
+        private bool CheckValue_MC(AttList ListItem, string fieldValue)
         {
-            if(string.IsNullOrEmpty(fieldValue))
+            if (string.IsNullOrEmpty(fieldValue))
             {
                 return true;
             }
-            bool bln_flag= ListItem.Value.FirstOrDefault(t => t.label.ToLower() == fieldValue.ToLower()) == null ? false : true;
-            if(!bln_flag)
+            bool bln_flag = ListItem.Value.FirstOrDefault(t => t.label.ToLower() == fieldValue.ToLower()) == null ? false : true;
+            if (!bln_flag)
             {
                 bln_flag = ListItem.Value.FirstOrDefault(t => t.value.ToLower() == fieldValue.ToLower()) == null ? false : true;
             }
@@ -421,12 +421,12 @@ namespace ArasBatchUploadCheck
 
         private bool CheckFilterValue_MC(AttList ListItem, string filter, string fieldValue)
         {
-            if(string.IsNullOrEmpty(fieldValue))
+            if (string.IsNullOrEmpty(fieldValue))
             {
                 return true;
             }
             bool bln_flag = ListItem.FilterValue.FirstOrDefault(t => t.filter.ToLower() == filter.ToLower() && t.label.ToLower() == fieldValue.ToLower()) == null ? false : true;
-            if(!bln_flag)
+            if (!bln_flag)
             {
                 bln_flag = ListItem.FilterValue.FirstOrDefault(t => t.filter.ToLower() == filter.ToLower() && t.value.ToLower() == fieldValue.ToLower()) == null ? false : true;
             }
@@ -474,6 +474,53 @@ namespace ArasBatchUploadCheck
         }
         //------------------------------
 
+        private AttList GetAttListByName(string pi_attListName)
+        {
+            return mc_List.FirstOrDefault(t => t.List.ToLower() == pi_attListName.ToLower());
+        }
+
+        //get value from parent
+        private string GetAttListFilterValue(AttributeType pi_Value, Item garmentItem)
+        {
+            string l_returnFilter = string.Empty;
+
+            switch (pi_Value)
+            {
+                case AttributeType.ProductType:
+                    l_returnFilter = GetValue_ByLabel(GetAttListByName(GetAttributeListName(pi_Value)), garmentItem.getProperty(GetAttributeColumnName(pi_Value), ""));
+                    break;
+                case AttributeType.ProductCatetory:
+                    l_returnFilter = GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(pi_Value)), GetAttListFilterValue(AttributeType.ProductType, garmentItem), garmentItem.getProperty(GetAttributeColumnName(pi_Value), ""));
+                    break;
+                case AttributeType.SubCatetory:
+                    l_returnFilter = GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(pi_Value)), GetAttListFilterValue(AttributeType.ProductCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(pi_Value), ""));
+                    break;
+                //case AttributeType.GarmentType:
+                //    break;
+                case AttributeType.Collection:
+                case AttributeType.Series:
+                //case AttributeType.Gender:
+                //    break;
+                case AttributeType.Cuff:
+                case AttributeType.Making:
+                case AttributeType.Fit:
+                case AttributeType.Pocket:
+                case AttributeType.Collar:
+                case AttributeType.Placket:
+                case AttributeType.Sleeve:
+                case AttributeType.Styling:
+                    l_returnFilter = GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(pi_Value)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(pi_Value), ""));
+                    break;
+                //case AttributeType.Washing:
+                //    break;
+                default:
+                    break;
+            }
+
+
+            return l_returnFilter;
+        }
+
         private CheckItemStatus CheckGarmentItem(Item garmentItem)
         {
             CheckItemStatus StatusItem = new CheckItemStatus();
@@ -488,7 +535,7 @@ namespace ArasBatchUploadCheck
                 switch (Item)
                 {
                     case AttributeType.ProductType:
-                        StatusItem.bln_ProductType = CheckValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        StatusItem.bln_ProductType = CheckValue_MC(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
                         if (!StatusItem.bln_ProductType)
                         {
                             StatusItem.bln_Check = false;
@@ -502,50 +549,39 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_ProductCategory = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.ProductType), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_ProductCategory)
-                            {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.ProductType)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.ProductType), ""));
-                                StatusItem.bln_ProductCategory = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            }
+                            StatusItem.bln_ProductCategory = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.ProductType,garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));                            
                         }
                         break;
                     case AttributeType.SubCatetory:
-                        if(!StatusItem.bln_ProductCategory)
+                        if (!StatusItem.bln_ProductCategory)
                         {
                             StatusItem.bln_SubCategory = false;
                             StatusItem.bln_Check = false;
                         }
                         else
                         {
-                            StatusItem.bln_SubCategory = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.ProductCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_SubCategory)
-                            {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.ProductCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.ProductCatetory), ""));
-                                StatusItem.bln_SubCategory = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            }
+                            StatusItem.bln_SubCategory = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.ProductCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
                         }
                         break;
                     case AttributeType.GarmentType:
-                        StatusItem.bln_GarmentType = CheckValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        StatusItem.bln_GarmentType = CheckValue_MC(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
                         if (!StatusItem.bln_GarmentType)
                         {
                             StatusItem.bln_Check = false;
                         }
                         break;
                     case AttributeType.Collection:
-                        if(!StatusItem.bln_SubCategory)
+                        if (!StatusItem.bln_SubCategory)
                         {
                             StatusItem.bln_Collection = false;
                             StatusItem.bln_Check = false;
                         }
                         else
                         {
-                            StatusItem.bln_Collection = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            StatusItem.bln_Collection = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
                             if(!StatusItem.bln_Collection)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Collection = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
@@ -557,16 +593,15 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_Series = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_Series)
+                            StatusItem.bln_Series = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Series)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Series = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
                     case AttributeType.Gender:
-                        StatusItem.bln_Gender = CheckValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        StatusItem.bln_Gender = CheckValue_MC(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
                         if (!StatusItem.bln_Gender)
                         {
                             StatusItem.bln_Check = false;
@@ -580,11 +615,10 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_Cuff = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_Cuff)
+                            StatusItem.bln_Cuff = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Cuff)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Cuff = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
@@ -596,11 +630,10 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_Making = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_Making)
+                            StatusItem.bln_Making = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Making)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Making = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
@@ -612,11 +645,10 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_Fit = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_Fit)
+                            StatusItem.bln_Fit = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Fit)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Fit = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
@@ -628,11 +660,10 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_Pocket = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_Pocket)
+                            StatusItem.bln_Pocket = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Pocket)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Pocket = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
@@ -644,11 +675,10 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_Collar = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_Collar)
+                            StatusItem.bln_Collar = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Collar)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Collar = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
@@ -660,11 +690,10 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_Placket = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_Placket)
+                            StatusItem.bln_Placket = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Placket)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Placket = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
@@ -676,11 +705,10 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_Sleeve = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_Sleeve)
+                            StatusItem.bln_Sleeve = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Sleeve)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Sleeve = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
@@ -692,16 +720,15 @@ namespace ArasBatchUploadCheck
                         }
                         else
                         {
-                            StatusItem.bln_Styling = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
-                            if(!StatusItem.bln_Styling)
+                            StatusItem.bln_Styling = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Styling)
                             {
-                                string filterValue = GetValue_ByLabel(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(AttributeType.SubCatetory)), garmentItem.getProperty(GetAttributeColumnName(AttributeType.SubCatetory), ""));
-                                StatusItem.bln_Styling = CheckFilterValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), filterValue, garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                                StatusItem.bln_Check = false;
                             }
                         }
                         break;
                     case AttributeType.Washing:
-                        StatusItem.bln_Washing = CheckValue_MC(mc_List.FirstOrDefault(t => t.List == GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        StatusItem.bln_Washing = CheckValue_MC(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
                         if (!StatusItem.bln_Washing)
                         {
                             StatusItem.bln_Check = false;
@@ -717,16 +744,296 @@ namespace ArasBatchUploadCheck
             return StatusItem;
         }
 
-        private Item FixGarmentItem(Item getItem)
+        private Item FixGarmentItem(Item garmentItem)
         {
-            throw new NotImplementedException();
+            CheckItemStatus StatusItem = new CheckItemStatus();
+            Item l_returnItem = garmentItem;
+
+            #region foreach
+
+            foreach (AttributeType Item in (AttributeType[])System.Enum.GetValues(typeof(AttributeType)))
+            {
+                switch (Item)
+                {
+                    case AttributeType.ProductType:
+                        StatusItem.bln_ProductType = CheckValue_MC(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        if (!StatusItem.bln_ProductType)
+                        {
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            l_returnItem.setProperty(GetAttributeColumnName(Item), GetValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                        }
+                        break;
+                    case AttributeType.ProductCatetory:
+                        if (!StatusItem.bln_ProductType)
+                        {
+                            StatusItem.bln_ProductCategory = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_ProductCategory = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.ProductType, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if(StatusItem.bln_ProductCategory)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.ProductType, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.SubCatetory:
+                        if (!StatusItem.bln_ProductCategory)
+                        {
+                            StatusItem.bln_SubCategory = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_SubCategory = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.ProductCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (StatusItem.bln_SubCategory)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.ProductCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.GarmentType:
+                        StatusItem.bln_GarmentType = CheckValue_MC(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        if (!StatusItem.bln_GarmentType)
+                        {
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            l_returnItem.setProperty(GetAttributeColumnName(Item), GetValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                        }
+                        break;
+                    case AttributeType.Collection:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Collection = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Collection = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Collection)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if(StatusItem.bln_Collection)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Series:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Series = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Series = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Series)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if (StatusItem.bln_Series)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Gender:
+                        StatusItem.bln_Gender = CheckValue_MC(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        if (!StatusItem.bln_Gender)
+                        {
+                            StatusItem.bln_Check = false;
+                        }
+                        else if (StatusItem.bln_Gender)
+                        {
+                            l_returnItem.setProperty(GetAttributeColumnName(Item), GetValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                        }
+                        break;
+                    case AttributeType.Cuff:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Cuff = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Cuff = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Cuff)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if (StatusItem.bln_Cuff)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Making:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Making = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Making = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Making)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if (StatusItem.bln_Making)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Fit:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Fit = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Fit = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Fit)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if (StatusItem.bln_Fit)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Pocket:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Pocket = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Pocket = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Pocket)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if (StatusItem.bln_Pocket)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Collar:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Collar = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Collar = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Collar)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if (StatusItem.bln_Collar)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Placket:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Placket = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Placket = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Placket)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if (StatusItem.bln_Placket)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Sleeve:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Sleeve = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Sleeve = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Sleeve)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if (StatusItem.bln_Sleeve)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Styling:
+                        if (!StatusItem.bln_SubCategory)
+                        {
+                            StatusItem.bln_Styling = false;
+                            StatusItem.bln_Check = false;
+                        }
+                        else
+                        {
+                            StatusItem.bln_Styling = CheckFilterValue_MC(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), ""));
+                            if (!StatusItem.bln_Styling)
+                            {
+                                StatusItem.bln_Check = false;
+                            }
+                            else if (StatusItem.bln_Styling)
+                            {
+                                l_returnItem.setProperty(GetAttributeColumnName(Item), GetFilterValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), GetAttListFilterValue(AttributeType.SubCatetory, garmentItem), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                            }
+                        }
+                        break;
+                    case AttributeType.Washing:
+                        StatusItem.bln_Washing = CheckValue_MC(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), ""));//***
+                        if (!StatusItem.bln_Washing)
+                        {
+                            StatusItem.bln_Check = false;
+                        }
+                        else if (StatusItem.bln_Washing)
+                        {
+                            l_returnItem.setProperty(GetAttributeColumnName(Item), GetValue_ByLabel(GetAttListByName(GetAttributeListName(Item)), garmentItem.getProperty(GetAttributeColumnName(Item), "")));
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            #endregion
+
+            return l_returnItem;
         }
 
         private TreeNode GetNodeByAttribute(CheckItemStatus pi_statusItem)
         {
             TreeNode l_attNode = new TreeNode();
             l_attNode.Text = "Attribute";
-   
+
             foreach (AttributeType Item in (AttributeType[])System.Enum.GetValues(typeof(AttributeType)))
             {
                 TreeNode l_node = new TreeNode();
@@ -798,7 +1105,7 @@ namespace ArasBatchUploadCheck
                         l_node.ImageIndex = pi_statusItem.bln_Washing ? 0 : 3;
                         l_node.SelectedImageIndex = pi_statusItem.bln_Washing ? 0 : 3;
                         break;
-                    default:                        
+                    default:
                         break;
                 }
 
@@ -855,8 +1162,8 @@ namespace ArasBatchUploadCheck
         {
             mc_conn = null;
             mc_innovator = null;
-            SettingConnectionButton(false);            
-        }        
+            SettingConnectionButton(false);
+        }
 
         //--------------------------------------------------------------------------------------------
 
@@ -888,7 +1195,7 @@ namespace ArasBatchUploadCheck
 
 
                 for (int rowIDX = 0; rowIDX < l_getDataRow.Length; rowIDX++)
-                {                    
+                {
                     int l_columnIdx = 0;
 
                     SettingProcess(l_getDataRow.Length, rowIDX + 1);
@@ -912,21 +1219,20 @@ namespace ArasBatchUploadCheck
 
                     Item getItem = GetItemByAML(l_tempAML);
 
-                    if(getItem.isError() ||getItem.isEmpty())
+                    if (getItem.isError() || getItem.isEmpty())
                     {
                         break;
                     }
 
-                    TreeNode garmentStyleNode = new TreeNode(getItem.getProperty("item_number", "Unknow GarmentStyle"));
                     CheckItemStatus l_status = CheckGarmentItem(getItem);
 
-                    //garmentStyleNode.Tag = l_status;
+                    TreeNode garmentStyleNode = new TreeNode(getItem.getProperty("item_number", "Unknow GarmentStyle"));
+                    garmentStyleNode.Name = getItem.getProperty("item_number", "");
                     garmentStyleNode.ImageIndex = l_status.bln_Check ? 0 : 3;
                     garmentStyleNode.SelectedImageIndex = l_status.bln_Check ? 0 : 3;
 
                     garmentStyleNode.Nodes.Add(GetNodeByAttribute(l_status));
 
-                    
                     tre_Item.Nodes[0].Nodes.Add(garmentStyleNode);
                     tre_Item.Nodes[0].Expand();
                     tre_Item.Refresh();
@@ -988,17 +1294,25 @@ namespace ArasBatchUploadCheck
                         break;
                     }
 
-                    tre_Item.Nodes[0].Nodes.Find(getItem.getProperty("item_number", ""), false)[0].ImageIndex = 2;
-                    tre_Item.Nodes[0].Nodes.Find(getItem.getProperty("item_number", ""), false)[0].SelectedImageIndex = 2;
-                    tre_Item.Refresh();
+                    TreeNode[] l_findNode = tre_Item.Nodes[0].Nodes.Find(getItem.getProperty("item_number", ""), false);
+                    if (l_findNode != null && l_findNode.Length > 0)
+                    {
+                        l_findNode[0].ImageIndex = 2;
+                        l_findNode[0].SelectedImageIndex = 2;
+                        tre_Item.Refresh();
+                    }
 
                     Item getFixItem = FixGarmentItem(getItem);
+                    getFixItem.setAction("edit");
                     Item getReturnItem = getFixItem.apply();
 
-                    tre_Item.Nodes[0].Nodes.Find(getItem.getProperty("item_number", ""), false)[0].ImageIndex = 4;
-                    tre_Item.Nodes[0].Nodes.Find(getItem.getProperty("item_number", ""), false)[0].SelectedImageIndex = 4;
+                    if (l_findNode != null && l_findNode.Length > 0)
+                    {
+                        l_findNode[0].ImageIndex = 4;
+                        l_findNode[0].SelectedImageIndex = 4;
+                        tre_Item.Refresh();
+                    }
 
-                    tre_Item.Refresh();
 
                 }
             }
@@ -1007,9 +1321,6 @@ namespace ArasBatchUploadCheck
                 ShowError(ex.Message);
             }
         }
-
-
-        
 
         //--------------------------------------------------------------------------------------------        
     }

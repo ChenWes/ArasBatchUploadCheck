@@ -9,3 +9,13 @@ F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\IOM.dll
 F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\IOM.pdb
 F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.exe
 F:\test\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.pdb
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\ArasBatchUploadCheck.exe.config
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.exe
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.pdb
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\ArasBatchUploadCheck.exe
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\ArasBatchUploadCheck.pdb
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\bin\Debug\IOM.pdb
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.csprojResolveAssemblyReference.cache
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.FrmMain.resources
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.Properties.Resources.resources
+F:\report\wes\ArasBatchUploadCheck\ArasBatchUploadCheck\obj\Debug\ArasBatchUploadCheck.csproj.GenerateResource.Cache
