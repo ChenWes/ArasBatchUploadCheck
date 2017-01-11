@@ -168,6 +168,8 @@ namespace ArasBatchUploadCheck
         public FrmMain()
         {
             InitializeComponent();
+            CheckForIllegalCrossThreadCalls = false;//解决线程安全
+
 
             SettingConnectionButton(false);
 
@@ -178,9 +180,11 @@ namespace ArasBatchUploadCheck
 
         //--------------------------------------------------------------------------------------------
 
-        private void GetConnection(string l_serverurl, string l_db, string l_username, string l_password)
+        private void GetConnection(object para)
         {
-            mc_conn = IomFactory.CreateHttpServerConnection(l_serverurl.Trim(), l_db.Trim(), l_username.Trim(), Innovator.ScalcMD5(l_password.Trim()));
+            ArasConnectionPara l_connectionPara = (ArasConnectionPara)para;
+            mc_conn = IomFactory.CreateHttpServerConnection(l_connectionPara.l_serverurl.Trim(), l_connectionPara.l_db.Trim(), l_connectionPara.l_username.Trim(), Innovator.ScalcMD5(l_connectionPara.l_password.Trim()));
+            //System.Threading.Thread.Sleep(5000);
         }
 
         private void GetInnovator()
@@ -1115,9 +1119,13 @@ namespace ArasBatchUploadCheck
             return l_attNode;
         }
 
+        private void checkItem()
+        {
+            
+        }
         //--------------------------------------------------------------------------------------------
 
-        private void btn_ConnectionAras_Click(object sender, EventArgs e)
+        private async void btn_ConnectionAras_Click(object sender, EventArgs e)
         {
             try
             {
@@ -1141,33 +1149,50 @@ namespace ArasBatchUploadCheck
                     throw new Exception("Password Is Null Or Empty !");
                 }
 
-                GetConnection(txt_serverurl.Text, txt_DB.Text, txt_username.Text, txt_password.Text);
-                GetInnovator();
+                ArasConnectionPara l_connectionPara=new ArasConnectionPara(){
+                    l_serverurl=txt_serverurl.Text.Trim(),
+                    l_db=txt_DB.Text.Trim(),
+                    l_username=txt_username.Text.Trim(),
+                    l_password=txt_password.Text.Trim()
+                };
 
-                Item login_result = mc_conn.Login();
+                //get connection
+                Task task_connection = new Task(GetConnection, l_connectionPara);
+                task_connection.Start();
+                await task_connection;
+
+                //get innovator
+                Task task_getinnovator = new Task(GetInnovator);
+                task_getinnovator.Start();
+                await task_getinnovator;
+                
+                //innovator login
+                Item login_result = await Task.Run(()=> mc_conn.Login());
                 if (login_result.isError()) throw new Exception("Login failed, please check connection infomation.");
+                
+                //get list attributes
+                await Task.Run(() => GetAttributeList());
 
-                SettingConnectionButton(true);
-
-                //
-                GetAttributeList();
+                //setting button
+                await Task.Run(() => SettingConnectionButton(true));                
             }
             catch (Exception ex)
-            {
+            {                
                 ShowError("Connection Aras Error:" + ex.Message);
             }
         }
 
-        private void btn_disconnection_Click(object sender, EventArgs e)
+        private async void btn_disconnection_Click(object sender, EventArgs e)
         {
             mc_conn = null;
             mc_innovator = null;
-            SettingConnectionButton(false);
+
+            await Task.Run(() => SettingConnectionButton(false));
         }
 
         //--------------------------------------------------------------------------------------------
 
-        private void btn_CheckItem_Click(object sender, EventArgs e)
+        private async void btn_CheckItem_Click(object sender, EventArgs e)
         {
             try
             {
@@ -1224,20 +1249,19 @@ namespace ArasBatchUploadCheck
                         break;
                     }
 
-                    CheckItemStatus l_status = CheckGarmentItem(getItem);
+                    CheckItemStatus l_status = await Task.Run(() => CheckGarmentItem(getItem));
 
                     TreeNode garmentStyleNode = new TreeNode(getItem.getProperty("item_number", "Unknow GarmentStyle"));
                     garmentStyleNode.Name = getItem.getProperty("item_number", "");
                     garmentStyleNode.ImageIndex = l_status.bln_Check ? 0 : 3;
                     garmentStyleNode.SelectedImageIndex = l_status.bln_Check ? 0 : 3;
 
-                    garmentStyleNode.Nodes.Add(GetNodeByAttribute(l_status));
+                    garmentStyleNode.Nodes.Add(await Task.Run(() => GetNodeByAttribute(l_status)));
 
                     tre_Item.Nodes[0].Nodes.Add(garmentStyleNode);
                     tre_Item.Nodes[0].Expand();
                     tre_Item.Refresh();
                 }
-
             }
             catch (Exception ex)
             {
@@ -1245,7 +1269,7 @@ namespace ArasBatchUploadCheck
             }
         }
 
-        private void btn_FixGarmentStyle_Click(object sender, EventArgs e)
+        private async void btn_FixGarmentStyle_Click(object sender, EventArgs e)
         {
             try
             {

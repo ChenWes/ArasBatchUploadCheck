@@ -48,6 +48,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArasConnectionPara.cs" />
     <Compile Include="CheckItemStatus.cs" />
     <Compile Include="FrmMain.cs">
       <SubType>Form</SubType>
