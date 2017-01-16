@@ -48,6 +48,7 @@
             this.btn_CheckItem = new System.Windows.Forms.Button();
             this.pro_CheckItem = new System.Windows.Forms.ProgressBar();
             this.btn_FixGarmentStyle = new System.Windows.Forms.Button();
+            this.btn_Cancel = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -198,7 +199,7 @@
             // 
             // btn_CheckItem
             // 
-            this.btn_CheckItem.Location = new System.Drawing.Point(759, 618);
+            this.btn_CheckItem.Location = new System.Drawing.Point(759, 584);
             this.btn_CheckItem.Name = "btn_CheckItem";
             this.btn_CheckItem.Size = new System.Drawing.Size(75, 23);
             this.btn_CheckItem.TabIndex = 9;
@@ -215,7 +216,7 @@
             // 
             // btn_FixGarmentStyle
             // 
-            this.btn_FixGarmentStyle.Location = new System.Drawing.Point(759, 651);
+            this.btn_FixGarmentStyle.Location = new System.Drawing.Point(759, 617);
             this.btn_FixGarmentStyle.Name = "btn_FixGarmentStyle";
             this.btn_FixGarmentStyle.Size = new System.Drawing.Size(75, 23);
             this.btn_FixGarmentStyle.TabIndex = 11;
@@ -223,11 +224,22 @@
             this.btn_FixGarmentStyle.UseVisualStyleBackColor = true;
             this.btn_FixGarmentStyle.Click += new System.EventHandler(this.btn_FixGarmentStyle_Click);
             // 
+            // btn_Cancel
+            // 
+            this.btn_Cancel.Location = new System.Drawing.Point(759, 651);
+            this.btn_Cancel.Name = "btn_Cancel";
+            this.btn_Cancel.Size = new System.Drawing.Size(75, 23);
+            this.btn_Cancel.TabIndex = 12;
+            this.btn_Cancel.Text = "Cancel";
+            this.btn_Cancel.UseVisualStyleBackColor = true;
+            this.btn_Cancel.Click += new System.EventHandler(this.btn_Cancel_Click);
+            // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(846, 686);
+            this.Controls.Add(this.btn_Cancel);
             this.Controls.Add(this.btn_FixGarmentStyle);
             this.Controls.Add(this.pro_CheckItem);
             this.Controls.Add(this.btn_CheckItem);
@@ -264,6 +276,7 @@
         private System.Windows.Forms.ProgressBar pro_CheckItem;
         private System.Windows.Forms.ImageList imageList_Item;
         private System.Windows.Forms.Button btn_FixGarmentStyle;
+        private System.Windows.Forms.Button btn_Cancel;
     }
 }
 

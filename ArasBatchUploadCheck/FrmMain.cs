@@ -5,15 +5,19 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using System.Threading;
+using System.Threading.Tasks;
 using Aras.IOM;
 
 namespace ArasBatchUploadCheck
 {
     public partial class FrmMain : Form
     {
+        private CancellationTokenSource mc_sourceArasInnovatorConnection;
+        private CancellationTokenSource mc_sourceCheckGarmentStyle;
+
         private HttpServerConnection mc_conn = null;
         private Innovator mc_innovator = null;
 
@@ -177,24 +181,32 @@ namespace ArasBatchUploadCheck
             pro_CheckItem.Maximum = 100;
         }
 
-
         //--------------------------------------------------------------------------------------------
 
-        private void GetConnection(object para)
+        private HttpServerConnection GetConnection(object para)
         {
             ArasConnectionPara l_connectionPara = (ArasConnectionPara)para;
-            mc_conn = IomFactory.CreateHttpServerConnection(l_connectionPara.l_serverurl.Trim(), l_connectionPara.l_db.Trim(), l_connectionPara.l_username.Trim(), Innovator.ScalcMD5(l_connectionPara.l_password.Trim()));
-            //System.Threading.Thread.Sleep(5000);
+            return IomFactory.CreateHttpServerConnection(l_connectionPara.l_serverurl.Trim(), l_connectionPara.l_db.Trim(), l_connectionPara.l_username.Trim(), Innovator.ScalcMD5(l_connectionPara.l_password.Trim()));
         }
 
-        private void GetInnovator()
+        private Innovator GetInnovator(HttpServerConnection pi_conn)
         {
-            mc_innovator = IomFactory.CreateInnovator(mc_conn);
+            return IomFactory.CreateInnovator(pi_conn);
+        }
+
+        private Item InnovatorLogin(HttpServerConnection pi_innovator)
+        {
+            return pi_innovator.Login();
         }
 
         private void ShowError(string errormessage)
         {
             MessageBox.Show(errormessage);
+        }
+
+        private void ShowError(Exception ex)
+        {
+            MessageBox.Show(ex.StackTrace, "System Run Error");
         }
 
         private void SettingProcess(int maxValue, int CurrentValue)
@@ -206,6 +218,16 @@ namespace ArasBatchUploadCheck
 
         private void SettingConnectionButton(bool bln_ConnectionFlag)
         {
+            if(bln_ConnectionFlag==false)
+            {
+                mc_innovator = null;
+                if(mc_conn!=null)
+                {
+                    mc_conn.Logout();
+                    mc_conn = null;
+                }
+            }
+
             btn_ConnectionAras.Enabled = !bln_ConnectionFlag;
             btn_disconnection.Enabled = bln_ConnectionFlag;
 
@@ -219,14 +241,28 @@ namespace ArasBatchUploadCheck
             //----------------------------------------------
 
             btn_CheckItem.Enabled = bln_ConnectionFlag;
+            btn_FixGarmentStyle.Enabled = bln_ConnectionFlag;
+            btn_Cancel.Enabled = bln_ConnectionFlag;
+
             txt_SearchAML.Enabled = bln_ConnectionFlag;
             txt_SearchItem.Enabled = bln_ConnectionFlag;
             tre_Item.Enabled = bln_ConnectionFlag;
 
             if (bln_ConnectionFlag)
             {
-                ClearCheckInfomation();
+                ClearCheckInfomation();                
             }
+        }
+
+        private void SettingProcessButton(bool bln_Cancel)
+        {
+            btn_CheckItem.Enabled = bln_Cancel;
+            btn_FixGarmentStyle.Enabled = bln_Cancel;
+            btn_Cancel.Enabled = !bln_Cancel;
+
+            //txt_SearchAML.Enabled = !bln_Cancel;
+            //txt_SearchItem.Enabled = !bln_Cancel;
+            //tre_Item.Enabled = !bln_Cancel;
         }
 
         private void ClearCheckInfomation()
@@ -1118,17 +1154,14 @@ namespace ArasBatchUploadCheck
 
             return l_attNode;
         }
-
-        private void checkItem()
-        {
-            
-        }
+        
         //--------------------------------------------------------------------------------------------
 
         private async void btn_ConnectionAras_Click(object sender, EventArgs e)
         {
             try
             {
+                #region check login parameter
                 if (string.IsNullOrEmpty(txt_serverurl.Text.Trim()))
                 {
                     throw new Exception("Server Url Is Null Or Empty !");
@@ -1148,46 +1181,63 @@ namespace ArasBatchUploadCheck
                 {
                     throw new Exception("Password Is Null Or Empty !");
                 }
+                #endregion
 
-                ArasConnectionPara l_connectionPara=new ArasConnectionPara(){
-                    l_serverurl=txt_serverurl.Text.Trim(),
-                    l_db=txt_DB.Text.Trim(),
-                    l_username=txt_username.Text.Trim(),
-                    l_password=txt_password.Text.Trim()
+                #region connection parameter
+                ArasConnectionPara l_connectionPara = new ArasConnectionPara()
+                {
+                    l_serverurl = txt_serverurl.Text.Trim(),
+                    l_db = txt_DB.Text.Trim(),
+                    l_username = txt_username.Text.Trim(),
+                    l_password = txt_password.Text.Trim()
                 };
+                #endregion
+
+                mc_sourceArasInnovatorConnection = new CancellationTokenSource();
+                btn_disconnection.Enabled = true;
 
                 //get connection
-                Task task_connection = new Task(GetConnection, l_connectionPara);
-                task_connection.Start();
-                await task_connection;
+                mc_conn= GetConnection(l_connectionPara);
+
+                //innovator login
+                Item login_result = mc_conn.Login();                                              
+                if (login_result.isError()) throw new Exception("Login failed, please check connection infomation.");                
 
                 //get innovator
-                Task task_getinnovator = new Task(GetInnovator);
-                task_getinnovator.Start();
-                await task_getinnovator;
-                
-                //innovator login
-                Item login_result = await Task.Run(()=> mc_conn.Login());
-                if (login_result.isError()) throw new Exception("Login failed, please check connection infomation.");
-                
+                mc_innovator= GetInnovator(mc_conn);                
+
                 //get list attributes
                 await Task.Run(() => GetAttributeList());
 
-                //setting button
-                await Task.Run(() => SettingConnectionButton(true));                
+                await Task.Run(() => SettingConnectionButton(true));
+
+                var msg = mc_sourceArasInnovatorConnection.Token.IsCancellationRequested ? "Aras Cancel Connection" : "Aras Connection Completed";
+                MessageBox.Show(msg, "Connection Status");
             }
             catch (Exception ex)
             {                
-                ShowError("Connection Aras Error:" + ex.Message);
+                ShowError(ex);
             }
         }
 
         private async void btn_disconnection_Click(object sender, EventArgs e)
         {
-            mc_conn = null;
             mc_innovator = null;
 
-            await Task.Run(() => SettingConnectionButton(false));
+            if (mc_conn != null)
+            {
+                mc_conn.Logout();
+                mc_conn = null;
+            }
+
+            if (mc_sourceArasInnovatorConnection != null)
+            {
+                await Task.Run(() => SettingConnectionButton(false));
+                if (!mc_sourceArasInnovatorConnection.Token.IsCancellationRequested)
+                {
+                    mc_sourceArasInnovatorConnection.Cancel();
+                }
+            }
         }
 
         //--------------------------------------------------------------------------------------------
@@ -1206,73 +1256,89 @@ namespace ArasBatchUploadCheck
                     throw new Exception("Please Enter Search AML .");
                 }
 
-                StringBuilder l_getItemAML = new StringBuilder();
+                SettingProcessButton(false);
+                mc_sourceCheckGarmentStyle = new CancellationTokenSource();
 
+                StringBuilder l_getItemAML = new StringBuilder();
                 string[] l_getDataRow = txt_SearchItem.Text.Trim().Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
-                TreeNode l_root = new TreeNode();
-                l_root.Text = "Garment";
-                l_root.ImageIndex = 1;
-                l_root.SelectedImageIndex = 1;
-                tre_Item.Nodes.Clear();
-                tre_Item.Nodes.Add(l_root);
-                tre_Item.Refresh();
-
-
-                for (int rowIDX = 0; rowIDX < l_getDataRow.Length; rowIDX++)
+                if (!mc_sourceCheckGarmentStyle.Token.IsCancellationRequested)
                 {
-                    int l_columnIdx = 0;
-
-                    SettingProcess(l_getDataRow.Length, rowIDX + 1);
-
-                    #region get parameter
-
-                    string[] l_getDataColumn = l_getDataRow[rowIDX].Split(new char[] { '\t' });
-                    if (l_getDataColumn != null && l_getDataColumn.Length != 0)
-                    {
-                        l_columnIdx = l_getDataColumn.Length;
-                    }
-
-                    string l_AML = "";
-                    string l_tempAML = txt_SearchAML.Text.Trim();
-                    for (int columnIDX = 0; columnIDX < l_columnIdx; columnIDX++)
-                    {
-                        l_tempAML = l_tempAML.Replace("{" + columnIDX + "}", l_getDataColumn[columnIDX]);
-                    }
-
-                    #endregion
-
-                    Item getItem = GetItemByAML(l_tempAML);
-
-                    if (getItem.isError() || getItem.isEmpty())
-                    {
-                        break;
-                    }
-
-                    CheckItemStatus l_status = await Task.Run(() => CheckGarmentItem(getItem));
-
-                    TreeNode garmentStyleNode = new TreeNode(getItem.getProperty("item_number", "Unknow GarmentStyle"));
-                    garmentStyleNode.Name = getItem.getProperty("item_number", "");
-                    garmentStyleNode.ImageIndex = l_status.bln_Check ? 0 : 3;
-                    garmentStyleNode.SelectedImageIndex = l_status.bln_Check ? 0 : 3;
-
-                    garmentStyleNode.Nodes.Add(await Task.Run(() => GetNodeByAttribute(l_status)));
-
-                    tre_Item.Nodes[0].Nodes.Add(garmentStyleNode);
-                    tre_Item.Nodes[0].Expand();
+                    TreeNode l_root = new TreeNode();
+                    l_root.Text = "Garment";
+                    l_root.ImageIndex = 1;
+                    l_root.SelectedImageIndex = 1;
+                    tre_Item.Nodes.Clear();
+                    tre_Item.Nodes.Add(l_root);
                     tre_Item.Refresh();
+
+                    for (int rowIDX = 0; rowIDX < l_getDataRow.Length; rowIDX++)
+                    {
+                        if (mc_sourceCheckGarmentStyle.Token.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        int l_columnIdx = 0;
+                        SettingProcess(l_getDataRow.Length, rowIDX + 1);
+
+                        #region get parameter
+
+                        string[] l_getDataColumn = l_getDataRow[rowIDX].Split(new char[] { '\t' });
+                        if (l_getDataColumn != null && l_getDataColumn.Length != 0)
+                        {
+                            l_columnIdx = l_getDataColumn.Length;
+                        }
+
+                        string l_AML = "";
+                        string l_tempAML = txt_SearchAML.Text.Trim();
+                        for (int columnIDX = 0; columnIDX < l_columnIdx; columnIDX++)
+                        {
+                            l_tempAML = l_tempAML.Replace("{" + columnIDX + "}", l_getDataColumn[columnIDX]);
+                        }
+
+                        #endregion
+
+                        Item getItem = GetItemByAML(l_tempAML);
+
+                        if (getItem.isError() || getItem.isEmpty())
+                        {
+                            break;
+                        }
+
+                        CheckItemStatus l_status = await Task.Run(() => CheckGarmentItem(getItem));
+
+                        Task.Delay(5000, mc_sourceCheckGarmentStyle.Token);
+
+                        TreeNode garmentStyleNode = new TreeNode(getItem.getProperty("item_number", "Unknow GarmentStyle"));
+                        garmentStyleNode.Name = getItem.getProperty("item_number", "");
+                        garmentStyleNode.ImageIndex = l_status.bln_Check ? 0 : 3;
+                        garmentStyleNode.SelectedImageIndex = l_status.bln_Check ? 0 : 3;
+
+                        garmentStyleNode.Nodes.Add(await Task.Run(() => GetNodeByAttribute(l_status)));
+
+                        tre_Item.Nodes[0].Nodes.Add(garmentStyleNode);
+                        tre_Item.Nodes[0].Expand();
+                        tre_Item.Refresh();
+                    }
+
                 }
+
+                SettingProcessButton(true);
+                var msg = mc_sourceCheckGarmentStyle.Token.IsCancellationRequested ? "Check Item Cancel" : "Check Item Completed";
+                MessageBox.Show(msg, "Check Item Status");
+
             }
             catch (Exception ex)
             {
-                ShowError(ex.Message);
+                ShowError(ex);
             }
         }
 
         private async void btn_FixGarmentStyle_Click(object sender, EventArgs e)
         {
             try
-            {
+            {               
                 if (string.IsNullOrEmpty(txt_SearchItem.Text.Trim()))
                 {
                     throw new Exception("Please Enter need Check Data.");
@@ -1283,13 +1349,20 @@ namespace ArasBatchUploadCheck
                     throw new Exception("Please Enter Search AML .");
                 }
 
+                SettingProcessButton(false);
+                mc_sourceCheckGarmentStyle = new CancellationTokenSource();
+
                 StringBuilder l_getItemAML = new StringBuilder();
-
                 string[] l_getDataRow = txt_SearchItem.Text.Trim().Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
 
                 for (int rowIDX = 0; rowIDX < l_getDataRow.Length; rowIDX++)
                 {
+                    //if cancel process
+                    if (mc_sourceCheckGarmentStyle.Token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     int l_columnIdx = 0;
 
                     SettingProcess(l_getDataRow.Length, rowIDX + 1);
@@ -1311,7 +1384,7 @@ namespace ArasBatchUploadCheck
 
                     #endregion
 
-                    Item getItem = GetItemByAML(l_tempAML);
+                    Item getItem = await Task.Run(() => GetItemByAML(l_tempAML));
 
                     if (getItem.isError() || getItem.isEmpty())
                     {
@@ -1326,7 +1399,7 @@ namespace ArasBatchUploadCheck
                         tre_Item.Refresh();
                     }
 
-                    Item getFixItem = FixGarmentItem(getItem);
+                    Item getFixItem = await Task.Run(() => FixGarmentItem(getItem));
                     getFixItem.setAction("edit");
                     Item getReturnItem = getFixItem.apply();
 
@@ -1336,16 +1409,29 @@ namespace ArasBatchUploadCheck
                         l_findNode[0].SelectedImageIndex = 4;
                         tre_Item.Refresh();
                     }
-
-
                 }
+
+                SettingProcessButton(true);
+                var msg = mc_sourceCheckGarmentStyle.Token.IsCancellationRequested ? "Fix Item Cancel" : "Fix Item Completed";
+                MessageBox.Show(msg, "Fix Item Status");
             }
             catch (Exception ex)
             {
-                ShowError(ex.Message);
+                ShowError(ex);
             }
         }
 
+        private async void btn_Cancel_Click(object sender, EventArgs e)
+        {
+            if (mc_sourceCheckGarmentStyle != null)
+            {
+                SettingProcessButton(true);
+                if (mc_sourceCheckGarmentStyle.Token.IsCancellationRequested)
+                {
+                    mc_sourceCheckGarmentStyle.Cancel();
+                }
+            }
+        }
         //--------------------------------------------------------------------------------------------        
     }
 }
